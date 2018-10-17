@@ -1,8 +1,5 @@
 #!/bin/bash
 
-cd $(dirname "$0")
-
-repo_folder=enigma-go-repo
 branch_name=automated-bump-engine-schema
 
 if [ -z "$GH_TOKEN" ]; then
@@ -10,18 +7,14 @@ if [ -z "$GH_TOKEN" ]; then
   exit 1
 fi
 
-rm -rf $repo_folder
-mkdir $repo_folder
-cd $repo_folder
+# Function for checking out master and discarding all local changes
+function reset_to_master() {
+  git checkout master
+  git reset --hard origin/master
+  git pull
+}
 
-git init
-git remote add origin git@github.com:qlik-oss/enigma-go.git
-git config core.fileMode false
-git config core.autocrlf false
-git config core.safecrlf false
-git fetch
-git checkout master
-
+reset_to_master
 existing_branch=$(git branch -r | grep -i "$branch_name")
 
 if [ ! -z "$existing_branch" ]; then
@@ -30,9 +23,11 @@ if [ ! -z "$existing_branch" ]; then
 fi
 
 # Generate enigma-go based on latest published Qlik Associative Engine image
-. ./schema/generate.sh
+cd `dirname $0`
+. ./generate.sh
 
 # If there are changes to qix_generated.go then open a pull request
+cd ..
 local_changes=$(git ls-files qix_generated.go -m)
 
 if [ ! -z "$local_changes" ]; then
@@ -46,6 +41,8 @@ if [ ! -z "$local_changes" ]; then
         \"head\": \"$branch_name\",
         \"base\": \"master\"
       }"
+
+  reset_to_master
 else
   echo "No changes to schema."
 fi
