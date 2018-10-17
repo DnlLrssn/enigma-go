@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Execute bash script from the repo root
+cd `dirname $0`
+cd ..
+
 branch_name=automated-bump-engine-schema
 
 if [ -z "$GH_TOKEN" ]; then
@@ -23,11 +27,11 @@ if [ ! -z "$existing_branch" ]; then
 fi
 
 # Generate enigma-go based on latest published Qlik Associative Engine image
-cd `dirname $0`
-. ./generate.sh
+
+. ./schema/generate.sh
 
 # If there are changes to qix_generated.go then open a pull request
-cd ..
+
 local_changes=$(git ls-files qix_generated.go -m)
 
 if [ ! -z "$local_changes" ]; then
